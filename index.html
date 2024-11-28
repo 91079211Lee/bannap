@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>선배식권 반납 여부 확인하기</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #fff1b0 0%, #fff1b0ff 99%, #fff1b0 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #ff9900 0%, #ff9900 99%, #ff9900 100%);
+            color: #ffffff;
+            text-align: center;
+            padding: 1rem;
+            font-size: 2rem;
+            font-weight: bold;
+            width: 100%;
+        }
+        .container {
+            max-width: 350px;
+            width: 100%;
+            margin: 2rem auto;
+            padding: 2rem 1.5rem;
+            background: #fff;
+            border: 1px solid #ffffff;
+            border-radius: 1px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #000000;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.5rem;
+            font-size: 1rem;
+            border: 1px solid #ffffff;
+            border-radius: 3px;
+            background-color: #ffffff;
+        }
+        .form-group input:focus, .form-group select:focus {
+            border-color: #ffffff;
+            outline: none;
+        }
+        .hidden {
+            display: none;
+        }
+        .button {
+            display: block;
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 1rem;
+            color: rgb(0, 0, 0);
+            background: linear-gradient(135deg, #ffe4af 0%, #ffe4af 100%);
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 1rem;
+        }
+        .button:hover {
+            background: linear-gradient(135deg, #ffe4af 0%, #ffe4af 100%);
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+        }
+        .table th, .table td {
+            border: 1px solid #ddd;
+            padding: 0.75rem;
+            text-align: left;
+        }
+        .notification {
+            color: rgb(0, 174, 255);
+            font-weight: bold;
+            text-align: center;
+        }
+        .cancel-button {
+            margin-top: 1rem;
+            display: block;
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 1rem;
+            color: rgb(0, 0, 0);
+            background: linear-gradient(135deg, #ffe4af 0%, #ffe4af 100%);
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            text-align: center;
+        }
+        .cancel-button:hover {
+            background: linear-gradient(135deg, #ffe4af 0%, #ffe4af 100%);
+        }
+        .delete-button {
+            background: #ff4d4d;
+            color: rgb(0, 0, 0);
+            border: none;
+            border-radius: 3px;
+            padding: 0.5rem;
+            cursor: pointer;
+        }
+        .delete-button:hover {
+            background: #ff3333;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">선배식권 반납이</div>
+    <div class="container">
+        <h2 style="text-align: center; color: #262626; margin-bottom: 1rem;">기록하기</h2>
+        <div class="form-group">
+            <label for="student-name">학번 이름</label>
+            <input type="text" id="student-name" placeholder="학번 이름을 입력하시오.">
+        </div>
+        <div class="form-group">
+            <label for="violation">패찰 번호</label>
+            <input type="text" id="violation" placeholder="패찰 번호를 입력하시오.">
+        </div>
+        <div class="form-group">
+            <label for="rule">반납 여부</label>
+            <select id="rule" onchange="handleReturnChange()">
+                <option value="O">O</option>
+                <option value="X">X</option>
+            </select>
+        </div>
+        <div id="penalty-container" class="form-group hidden">
+            <label for="penalty">반납 기간 엄수를 하지 않았습니다.</label>
+            <select id="penalty">
+                <option value="1주">1주 동안 빌릴 수 없습니다.</option>
+                <option value="2주">2주 동안 빌릴 수 없습니다.</option>
+                <option value="3주">3주 동안 빌릴 수 없습니다.</option>
+                <option value="~">미제출</option>
+            </select>
+        </div>
+        <button class="button" onclick="submitForm()">제출하기</button>
+        <button class="cancel-button" onclick="cancelForm()">취소하기</button>
+        <p id="notification" class="notification hidden">반납 하셨습니다.</p>
+    </div>
+
+    <table class="table" id="result-table">
+        <thead>
+            <tr>
+                <th>학번 이름</th>
+                <th>패찰 번호</th>
+                <th>반납 여부</th>
+                <th>처벌 기간</th>
+                <th>기록 지우기</th>
+            </tr>
+        </thead>
+        <tbody id="result-body"></tbody>
+    </table>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', loadEntries);
+
+        function handleReturnChange() {
+            const ruleSelect = document.getElementById('rule');
+            const penaltyContainer = document.getElementById('penalty-container');
+            if (ruleSelect.value === 'X') {
+                penaltyContainer.classList.remove('hidden');
+            } else {
+                penaltyContainer.classList.add('hidden');
+            }
+        }
+
+        function submitForm() {
+            const studentName = document.getElementById('student-name').value;
+            const violation = document.getElementById('violation').value;
+            const rule = document.getElementById('rule').value;
+
+            if (!studentName || !violation) {
+                alert('모든 칸을 입력해 주세요.');
+                return;
+            }
+
+            if (rule === 'O') {
+                document.getElementById('notification').classList.remove('hidden');
+                setTimeout(() => {
+                    document.getElementById('notification').classList.add('hidden');
+                }, 3000);
+                return;
+            }
+
+            let penalty = '';
+            if (rule === 'X') {
+                penalty = document.getElementById('penalty').value;
+                if (!penalty) {
+                    alert('처벌 기간을 선택해 주세요.');
+                    return;
+                }
+            }
+
+            const entry = { studentName, violation, rule, penalty };
+            saveEntry(entry);
+            addEntryToTable(entry);
+
+            // Reset form fields
+            document.getElementById('student-name').value = '';
+            document.getElementById('violation').value = '';
+            document.getElementById('rule').value = 'O';
+            document.getElementById('penalty-container').classList.add('hidden');
+        }
+
+        function cancelForm() {
+            document.getElementById('student-name').value = '';
+            document.getElementById('violation').value = '';
+            document.getElementById('rule').value = 'O';
+            document.getElementById('penalty-container').classList.add('hidden');
+        }
+
+        function saveEntry(entry) {
+            const entries = JSON.parse(localStorage.getItem('entries')) || [];
+            entries.push(entry);
+            localStorage.setItem('entries', JSON.stringify(entries));
+        }
+
+        function loadEntries() {
+            const entries = JSON.parse(localStorage.getItem('entries')) || [];
+            entries.forEach((entry, index) => addEntryToTable(entry, index));
+        }
+
+        function addEntryToTable(entry, index) {
+            const tableBody = document.getElementById('result-body');
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td>${entry.studentName}</td>
+                <td>${entry.violation}</td>
+                <td>${entry.rule}</td>
+                <td>${entry.penalty}</td>
+                <td><button class="delete-button" onclick="confirmDeleteEntry(${index})">삭제</button></td>
+            `;
+            tableBody.appendChild(newRow);
+        }
+
+        function confirmDeleteEntry(index) {
+            const password = prompt('비밀번호를 입력하세요:', '');
+            if (password === 'YKIS54321') {
+                deleteEntry(index);
+            } else {
+                alert('비밀번호가 틀렸습니다.');
+            }
+        }
+
+        function deleteEntry(index) {
+            const entries = JSON.parse(localStorage.getItem('entries')) || [];
+            entries.splice(index, 1); // 항목 삭제
+            localStorage.setItem('entries', JSON.stringify(entries)); // 다시 저장
+            location.reload(); // 페이지 새로고침하여 최신 상태 반영
+        }
+    </script>
+</body>
+</html>
